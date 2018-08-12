@@ -90,6 +90,8 @@ void rfm69_tx_run()
     uint8_t result;
 
     float humidity, temperature, pressure;
+    uint16_t utemp;
+    uint8_t uhum;
   
     RFM_RESET = 1;
     wait(.1);
@@ -125,11 +127,24 @@ void rfm69_tx_run()
  
 
     while(1){
+
     	temp_sensor1->get_temperature(&temperature);
     	humidity_sensor->get_humidity(&humidity);
     
-    	sprintf((char*)msgBuf, "#%d, T=%2.2fC, H=%2.0f%%", i++, temperature, humidity); 
+    	utemp = (uint16_t)(temperature*100);
+    	uhum = (uint8_t)humidity;
+    	// sprintf((char*)msgBuf, "#%d, T=%2.2fC, H=%2.0f%%", i++, temperature, humidity); 
 
+		msgBuf[0] = i++;
+
+    	msgBuf[1] = (utemp & 0xff00)>>8;
+    	msgBuf[2] = utemp & 0x00ff;
+
+    	msgBuf[3] = uhum;
+
+    	printf("cnt: %u, utemp: %u, uhum: %u\r\n", i, utemp, uhum); 
+
+		radio.send((uint8_t)GATEWAY_ID, msgBuf, 4);    	
     	// printf("RSSI: %d \n\r", radio.readRSSI(0)); 
 		// sprintf((char*)msgBuf, "#%d,  temp=%dC", i++, radio.readTemperature(-1)); 
 		// if(radio.sendWithRetry((uint8_t)GATEWAY_ID, msgBuf, strlen(msgBuf), true)){
@@ -137,8 +152,8 @@ void rfm69_tx_run()
 		// }
 		// else printf("Packet %d sent, no Ack!\r\n",i++);
 
-		radio.send((uint8_t)GATEWAY_ID, msgBuf, strlen(msgBuf));
-		printf("Send: %s\r\n", msgBuf);
+		// radio.send((uint8_t)GATEWAY_ID, msgBuf, strlen(msgBuf));
+		// printf("Send: %s\r\n", msgBuf);
 
     	wait(3);
     }
